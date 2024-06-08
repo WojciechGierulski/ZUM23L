@@ -84,9 +84,9 @@ class CustomBaggingClassifier(BaseEstimator):
             self.estimators[model_nr].fit(X_sample_transformed, y_sample)
 
     def predict(self, X: Union[np.ndarray, pd.DataFrame], model_nrs: Optional[List[int]]=None) -> np.ndarray:
+        classes_arr = np.zeros((X.shape[0], self.n_classes))
         if model_nrs is None:
             model_nrs = list(range(self.n_estimators))
-        y_total: np.ndarray = np.zeros((X.shape[0], self.n_classes))
         if type(X) is np.ndarray:
             X = pd.DataFrame(data=X, columns=list(range(len(X.shape[1]))))
         for i, (estimator_params, estimator) in enumerate(zip(self.estimators_parameters, self.estimators)):
@@ -96,11 +96,12 @@ class CustomBaggingClassifier(BaseEstimator):
             X_sample = estimator_params["transformer"].transform(X_sample)
             if self.has_predict_proba:
                 y_pred = estimator.predict_proba(X_sample)
+                classes_arr += y_pred
             else:
                 y_pred = estimator.predict(X_sample)
-                y_pred = OneHotEncoder(sparse_output=False).fit_transform(y_pred.reshape((-1,1)))
-            y_total += y_pred
-        return y_total.argmax(axis=1)
+                for i, x in enumerate(y_pred):
+                    classes_arr[i, x] += 1
+        return classes_arr.argmax(axis=1)
 
     # def oob_predictions(self) -> Tuple[np.ndarray, np.ndarray]:
     #     import time
