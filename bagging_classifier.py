@@ -105,3 +105,7 @@ class CustomBaggingClassifier(BaseEstimator):
             return classes_arr.argmax(axis=1)
         else:
             return classes_arr / classes_arr.sum(axis=1)[:,np.newaxis]
+        
+
+    def predict_proba(self, X: Union[np.ndarray, pd.DataFrame]) -> np.ndarray:
+        return self.predict(X, predict_proba=True)
