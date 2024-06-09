@@ -62,7 +62,7 @@ class CustomBaggingClassifier(BaseEstimator):
         self.X = X
         self.y = y
         self.n_classes = y.nunique()[0]
-        for model_nr in tqdm(range(self.n_estimators)):
+        for model_nr in range(self.n_estimators):
             features_sample = np.random.choice(X.columns, size=int(self.sample_size_features * X.shape[1]),
                                                replace=self.sampling_with_replacement_features)
             features_sample = list(set(features_sample))
@@ -83,7 +83,7 @@ class CustomBaggingClassifier(BaseEstimator):
             X_sample_transformed = self.estimators_parameters[model_nr]["transformer"].fit_transform(X_sample)
             self.estimators[model_nr].fit(X_sample_transformed, y_sample)
 
-    def predict(self, X: Union[np.ndarray, pd.DataFrame], model_nrs: Optional[List[int]]=None) -> np.ndarray:
+    def predict(self, X: Union[np.ndarray, pd.DataFrame], model_nrs: Optional[List[int]]=None, predict_proba=False) -> np.ndarray:
         classes_arr = np.zeros((X.shape[0], self.n_classes))
         if model_nrs is None:
             model_nrs = list(range(self.n_estimators))
@@ -101,18 +101,7 @@ class CustomBaggingClassifier(BaseEstimator):
                 y_pred = estimator.predict(X_sample)
                 for i, x in enumerate(y_pred):
                     classes_arr[i, x] += 1
-        return classes_arr.argmax(axis=1)
-
-    # def oob_predictions(self) -> Tuple[np.ndarray, np.ndarray]:
-    #     import time
-    #     y_pred = []
-    #     for idx, row in self.X.iterrows():
-    #         row = pd.DataFrame(row).T
-    #         model_nrs: List[int] = []
-    #         for i, estimator_parameters in enumerate(self.estimators_parameters):
-    #             if i in estimator_parameters["samples_indices"]:
-    #                 model_nrs.append(i)
-    #         y = self.predict(row, model_nrs)[0]
-    #         y_pred.append(y)
-    #     return np.array(y_pred), self.y.values
-
+        if not predict_proba:
+            return classes_arr.argmax(axis=1)
+        else:
+            return classes_arr / classes_arr.sum(axis=1)[:,np.newaxis]

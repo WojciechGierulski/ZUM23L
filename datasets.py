@@ -2,6 +2,7 @@ from ucimlrepo import fetch_ucirepo
 import pandas as pd
 from typing import Tuple, List
 from sklearn.preprocessing import LabelEncoder
+import numpy as np
 
 
 def encode_categorical(X: pd.DataFrame) -> pd.DataFrame:
@@ -13,6 +14,10 @@ def load_dataset(name: str) -> Tuple[pd.DataFrame, pd.DataFrame, List[str], List
         dataset = fetch_ucirepo(id=186)
         X = dataset.data.features
         y = dataset.data.targets
+        y = y[np.logical_and(y!=3, y!=9)].dropna()
+        X = X.loc[y.index]
+        X.reset_index(drop=True, inplace=True)
+        y.reset_index(drop=True, inplace=True)
     elif name == "adult":
         dataset = fetch_ucirepo(id=2)
         X = dataset.data.features
